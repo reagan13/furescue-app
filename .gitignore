@@ -1,0 +1,24 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Secrets (if any land here later)
+.env
+.env.*
+!.env.example
+
+# Android / Flutter (when app/ is generated)
+app/.gradle/
+app/.idea/
+app/local.properties
+app/**/build/
+app/**/captures/
+*.apk
+*.aab
+*.iml
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies

@@ -1,0 +1,29 @@
+name: furescue_app
+description: FuRescue — Android client for residents and rescuers in Mati City.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ^9.2.4
+  flutter_svg: ^2.2.1
+  geolocator: ^14.0.2
+  google_fonts: ^6.3.2
+  http: ^1.5.0
+  image_picker: ^1.2.1
+  url_launcher: ^6.3.2
+  wave: ^0.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  integration_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

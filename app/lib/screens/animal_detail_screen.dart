@@ -1,0 +1,216 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../api/api_exception.dart';
+import '../api/config.dart';
+import '../api/json_map.dart';
+import '../api/media.dart';
+import '../models/animal.dart';
+import '../session/session_scope.dart';
+import '../widgets/async_body.dart';
+import '../widgets/confirm_action.dart';
+import '../widgets/photo_strip.dart';
+import '../widgets/status_chip.dart';
+
+class AnimalDetailScreen extends StatefulWidget {
+  const AnimalDetailScreen({super.key, required this.animalId});
+
+  final String animalId;
+
+  @override
+  State<AnimalDetailScreen> createState() => _AnimalDetailScreenState();
+}
+
+class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
+  final _message = TextEditingController();
+  Animal? _animal;
+  var _loading = true;
+  var _applying = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _message.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await SessionScope.of(context).api
+          .get('/api/v1/animals/${widget.animalId}');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _animal = Animal.fromJson(asJsonMap(data['animal']));
+        _loading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _open3d(String raw) async {
+    final url = Uri.parse(resolveMediaUrl(ApiConfig.current, raw));
+    final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      showSnack(context, 'Could not open the 3D profile.');
+    }
+  }
+
+  Future<void> _apply() async {
+    final animal = _animal;
+    if (animal == null) {
+      return;
+    }
+    final ok = await confirmAction(
+      context,
+      title: 'Apply to adopt?',
+      message: 'Submit an adoption application for ${animal.displayName}.',
+      confirmLabel: 'Apply',
+    );
+    if (!ok || !mounted) {
+      return;
+    }
+    setState(() => _applying = true);
+    try {
+      final body = <String, dynamic>{'animal_id': animal.id};
+      final note = _message.text.trim();
+      if (note.isNotEmpty) {
+        body['message'] = note;
+      }
+      await SessionScope.of(context).api.post('/api/v1/adoptions', body: body);
+      if (!mounted) {
+        return;
+      }
+      showSnack(
+        context,
+        'Application submitted. Watch My Adoptions for updates.',
+      );
+      _message.clear();
+    } on ApiException catch (e) {
+      if (mounted) {
+        showSnack(context, e.message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _applying = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final animal = _animal;
+    return Scaffold(
+      appBar: AppBar(title: Text(animal?.displayName ?? 'Animal')),
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: AsyncBody(
+          loading: _loading,
+          error: _error,
+          isEmpty: animal == null,
+          onRetry: _load,
+          emptyMessage: 'Animal not found.',
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 28, 16, 32),
+            children: [
+              if (animal!.photoUrls.isNotEmpty) ...[
+                PhotoStrip(urls: animal.photoUrls, height: 220),
+                const SizedBox(height: 20),
+              ],
+              StatusChip(
+                label: animal.statusLabel,
+                status: animal.adoptionStatus,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                animal.displayName,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                [
+                  animal.species,
+                  animal.breedType,
+                  animal.sex,
+                  if (animal.ageEstimate != null) animal.ageEstimate!,
+                ].where((s) => s.isNotEmpty).join(' · '),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (animal.colorMarkings != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  animal.colorMarkings!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              if (animal.description != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  animal.description!,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ],
+              if (animal.photo360Set.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('360 set', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                PhotoStrip(urls: animal.photo360Set),
+              ],
+              const SizedBox(height: 16),
+              if (animal.model3dUrl != null)
+                OutlinedButton.icon(
+                  onPressed: () => _open3d(animal.model3dUrl!),
+                  icon: const Icon(Icons.view_in_ar_outlined),
+                  label: const Text('View in 3D'),
+                )
+              else
+                Text(
+                  'No 3D profile uploaded yet.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              if (animal.isAvailable) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Apply to adopt',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _message,
+                  maxLines: 3,
+                  maxLength: 1000,
+                  decoration: const InputDecoration(
+                    hintText: 'Optional note for City Vet',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: _applying ? null : _apply,
+                  child: Text(_applying ? 'Submitting…' : 'Submit application'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
