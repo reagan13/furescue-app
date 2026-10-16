@@ -11,6 +11,7 @@ class AsyncBody extends StatelessWidget {
     required this.onRetry,
     required this.emptyMessage,
     required this.child,
+    this.emptyChild,
   });
 
   final bool loading;
@@ -19,6 +20,7 @@ class AsyncBody extends StatelessWidget {
   final Future<void> Function() onRetry;
   final String emptyMessage;
   final Widget child;
+  final Widget? emptyChild;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,8 @@ class AsyncBody extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
-          Text(emptyMessage, style: Theme.of(context).textTheme.bodyMedium),
+          emptyChild ??
+              Text(emptyMessage, style: Theme.of(context).textTheme.bodyMedium),
         ],
       );
     }

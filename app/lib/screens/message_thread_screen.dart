@@ -6,7 +6,9 @@ import '../models/message_thread.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/async_body.dart';
+import '../widgets/chat_bubble.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 
 class MessageThreadScreen extends StatefulWidget {
   const MessageThreadScreen({super.key, required this.thread});
@@ -19,7 +21,6 @@ class MessageThreadScreen extends StatefulWidget {
 
 class _MessageThreadScreenState extends State<MessageThreadScreen> {
   final _text = TextEditingController();
-  final _scroll = ScrollController();
   List<ChatMessage> _items = const [];
   var _loading = true;
   var _sending = false;
@@ -34,7 +35,6 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
   @override
   void dispose() {
     _text.dispose();
-    _scroll.dispose();
     super.dispose();
   }
 
@@ -121,12 +121,29 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
   Widget build(BuildContext context) {
     final me = SessionScope.of(context).user?.id;
     final tokens = context.tokens;
+    final title = _threadTitle(widget.thread.otherUserName);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.thread.otherUserName ?? widget.thread.contextLabel),
-      ),
+      appBar: ShellHeader(title: title, showBack: true),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpace.md,
+              AppSpace.sm,
+              AppSpace.md,
+              0,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                widget.thread.contextLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: tokens.mutedForeground),
+              ),
+            ),
+          ),
           Expanded(
             child: AsyncBody(
               loading: _loading,
@@ -135,68 +152,59 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
               onRetry: _load,
               emptyMessage: 'No messages yet. Write the first one.',
               child: ListView.builder(
-                    controller: _scroll,
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                    itemCount: _items.length,
-                    itemBuilder: (context, i) {
-                      final msg = _items[i];
-                      final mine = msg.senderId == me;
-                      return Align(
-                        alignment: mine
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          constraints: const BoxConstraints(maxWidth: 320),
-                          decoration: BoxDecoration(
-                            color: mine ? tokens.jungle : tokens.card,
-                            borderRadius: BorderRadius.circular(tokens.radius),
-                            border: mine
-                                ? null
-                                : Border.all(color: tokens.border),
-                          ),
-                          child: Text(
-                            msg.messageText,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: mine
-                                      ? tokens.primaryForeground
-                                      : tokens.ink,
-                                ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                reverse: true,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.md,
+                  AppSpace.sm,
+                  AppSpace.md,
+                  AppSpace.sm,
+                ),
+                itemCount: _items.length,
+                itemBuilder: (context, i) {
+                  final msg = _items[_items.length - 1 - i];
+                  return ChatBubble(message: msg, mine: msg.senderId == me);
+                },
+              ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _text,
-                      minLines: 1,
-                      maxLines: 4,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sending ? null : _send(),
-                      decoration: const InputDecoration(
-                        hintText: 'Write a message',
+          Material(
+            color: tokens.card,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: tokens.border)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpace.sm,
+                    AppSpace.xs,
+                    AppSpace.xs,
+                    AppSpace.xs,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _text,
+                          minLines: 1,
+                          maxLines: 4,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _sending ? null : _send(),
+                          decoration: const InputDecoration(
+                            hintText: 'Write a message',
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: AppSpace.xs),
+                      IconButton.filled(
+                        onPressed: _sending ? null : _send,
+                        icon: const Icon(Icons.send),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    onPressed: _sending ? null : _send,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -204,4 +212,12 @@ class _MessageThreadScreenState extends State<MessageThreadScreen> {
       ),
     );
   }
+}
+
+String _threadTitle(String? name) {
+  final trimmed = name?.trim() ?? '';
+  if (trimmed.isEmpty) {
+    return 'Conversation';
+  }
+  return trimmed;
 }

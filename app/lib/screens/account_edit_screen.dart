@@ -8,6 +8,7 @@ import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/auth_field.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 
 class AccountEditScreen extends StatefulWidget {
   const AccountEditScreen({super.key});
@@ -124,7 +125,7 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit profile')),
+      appBar: const ShellHeader(title: 'Edit profile', showBack: true),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [

@@ -1,3 +1,11 @@
+String labelWord(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) {
+    return '';
+  }
+  return trimmed[0].toUpperCase() + trimmed.substring(1);
+}
+
 String shortId(String? id) {
   if (id == null || id.isEmpty) {
     return '—';

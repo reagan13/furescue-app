@@ -6,6 +6,7 @@ import '../models/message_thread.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 import 'message_thread_screen.dart';
 
 class ComposeTopic {
@@ -21,11 +22,7 @@ class ComposeTopic {
 }
 
 class MessageComposeScreen extends StatefulWidget {
-  const MessageComposeScreen({
-    super.key,
-    this.relatedType,
-    this.relatedId,
-  });
+  const MessageComposeScreen({super.key, this.relatedType, this.relatedId});
 
   final String? relatedType;
   final String? relatedId;
@@ -91,8 +88,11 @@ class _MessageComposeScreenState extends State<MessageComposeScreen> {
         _receiverId = (receiver['id'] ?? '').toString();
         _receiverName = asNullableString(receiver['full_name']) ?? 'City Vet';
         _topics = topics;
-        _selectedKey = selectedKey ??
-            (topics.isEmpty ? null : '${topics.first.relatedType}|${topics.first.relatedId}');
+        _selectedKey =
+            selectedKey ??
+            (topics.isEmpty
+                ? null
+                : '${topics.first.relatedType}|${topics.first.relatedId}');
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -168,7 +168,7 @@ class _MessageComposeScreenState extends State<MessageComposeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New message')),
+      appBar: const ShellHeader(title: 'New message', showBack: true),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -190,11 +190,16 @@ class _MessageComposeScreenState extends State<MessageComposeScreen> {
                   DropdownButtonFormField<String>(
                     key: ValueKey(_selectedKey),
                     initialValue: _selectedKey,
+                    isExpanded: true,
                     items: [
                       for (final topic in _topics)
                         DropdownMenuItem(
                           value: '${topic.relatedType}|${topic.relatedId}',
-                          child: Text(topic.label, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            topic.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                     onChanged: _sending
@@ -202,7 +207,10 @@ class _MessageComposeScreenState extends State<MessageComposeScreen> {
                         : (value) => setState(() => _selectedKey = value),
                   ),
                   const SizedBox(height: 16),
-                  Text('Message', style: Theme.of(context).textTheme.labelLarge),
+                  Text(
+                    'Message',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _text,

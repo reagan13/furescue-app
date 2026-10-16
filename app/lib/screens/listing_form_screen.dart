@@ -5,6 +5,7 @@ import '../api/api_exception.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 
 class ListingFormScreen extends StatefulWidget {
   const ListingFormScreen({super.key});
@@ -73,7 +74,9 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
     final name = _name.text.trim();
     final description = _description.text.trim();
     if (name.isEmpty || description.isEmpty || _photos.isEmpty) {
-      setState(() => _error = 'Name, profile, and at least one photo are required.');
+      setState(
+        () => _error = 'Name, profile, and at least one photo are required.',
+      );
       return;
     }
     final ok = await confirmAction(
@@ -114,7 +117,10 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
       if (!mounted) {
         return;
       }
-      showSnack(context, "Listing submitted. You'll be notified once it's reviewed.");
+      showSnack(
+        context,
+        "Listing submitted. You'll be notified once it's reviewed.",
+      );
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) {
@@ -131,7 +137,7 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return Scaffold(
-      appBar: AppBar(title: const Text('Post for adoption')),
+      appBar: const ShellHeader(title: 'Post for adoption', showBack: true),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         children: [
@@ -145,29 +151,72 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
           TextField(
             controller: _name,
             maxLength: 100,
-            decoration: const InputDecoration(hintText: 'Ligaya', counterText: ''),
+            decoration: const InputDecoration(
+              hintText: 'Ligaya',
+              counterText: '',
+            ),
           ),
           const SizedBox(height: 12),
           Text('Species', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'dog', label: Text('Dog')),
-              ButtonSegment(value: 'cat', label: Text('Cat')),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Dog (Aspin)'),
+                selected: _species == 'dog',
+                onSelected: _submitting
+                    ? null
+                    : (selected) {
+                        if (selected) {
+                          setState(() => _species = 'dog');
+                        }
+                      },
+              ),
+              ChoiceChip(
+                label: const Text('Cat (Puspin)'),
+                selected: _species == 'cat',
+                onSelected: _submitting
+                    ? null
+                    : (selected) {
+                        if (selected) {
+                          setState(() => _species = 'cat');
+                        }
+                      },
+              ),
             ],
-            selected: {_species},
-            onSelectionChanged: (next) => setState(() => _species = next.first),
           ),
           const SizedBox(height: 12),
           Text('Sex', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'female', label: Text('Female')),
-              ButtonSegment(value: 'male', label: Text('Male')),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Female'),
+                selected: _sex == 'female',
+                onSelected: _submitting
+                    ? null
+                    : (selected) {
+                        if (selected) {
+                          setState(() => _sex = 'female');
+                        }
+                      },
+              ),
+              ChoiceChip(
+                label: const Text('Male'),
+                selected: _sex == 'male',
+                onSelected: _submitting
+                    ? null
+                    : (selected) {
+                        if (selected) {
+                          setState(() => _sex = 'male');
+                        }
+                      },
+              ),
             ],
-            selected: {_sex},
-            onSelectionChanged: (next) => setState(() => _sex = next.first),
           ),
           const SizedBox(height: 12),
           Text('Age estimate', style: Theme.of(context).textTheme.labelLarge),
@@ -181,7 +230,10 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text('Color / markings', style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            'Color / markings',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
           const SizedBox(height: 6),
           TextField(
             controller: _color,
@@ -200,11 +252,15 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
             maxLength: 2000,
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(
-              hintText: 'Temperament, how it was rescued, and what home it needs.',
+              hintText:
+                  'Temperament, how it was rescued, and what home it needs.',
             ),
           ),
           const SizedBox(height: 12),
-          Text('Photos (required)', style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            'Photos (required)',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,

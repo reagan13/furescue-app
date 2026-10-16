@@ -11,7 +11,11 @@ class LearningQuizQuestion {
     return LearningQuizQuestion(
       question: (json['q'] ?? '').toString(),
       options: options is List
-          ? options.map((item) => item.toString()).toList()
+          ? [
+              for (final item in options)
+                if (item != null && item.toString().trim().isNotEmpty)
+                  item.toString(),
+            ]
           : const [],
     );
   }
@@ -28,6 +32,14 @@ class LearningModule {
     this.quiz = const [],
   });
 
+  /// API `category` values, in catalog order.
+  static const categoryOrder = [
+    'dog_behavior',
+    'cat_behavior',
+    'basic_training',
+    'general_care',
+  ];
+
   final String id;
   final String title;
   final String category;
@@ -36,7 +48,16 @@ class LearningModule {
   final bool hasQuiz;
   final List<LearningQuizQuestion> quiz;
 
-  String get categoryLabel {
+  String get displayTitle {
+    final trimmed = title.trim();
+    return trimmed.isEmpty ? 'Untitled course' : trimmed;
+  }
+
+  bool get isDraft => publishedStatus == 'draft';
+
+  String get categoryLabel => labelFor(category);
+
+  static String labelFor(String category) {
     switch (category) {
       case 'dog_behavior':
         return 'Dog behavior';
@@ -47,7 +68,8 @@ class LearningModule {
       case 'general_care':
         return 'General care';
       default:
-        return category;
+        final trimmed = category.trim();
+        return trimmed.isEmpty ? 'Course' : trimmed;
     }
   }
 
@@ -59,7 +81,9 @@ class LearningModule {
       contentBody: asNullableString(json['content_body']),
       publishedStatus: asNullableString(json['published_status']),
       hasQuiz: asBool(json['has_quiz']),
-      quiz: asJsonMapList(json['quiz']).map(LearningQuizQuestion.fromJson).toList(),
+      quiz: asJsonMapList(json['quiz'])
+          .map(LearningQuizQuestion.fromJson)
+          .toList(),
     );
   }
 }
@@ -80,29 +104,51 @@ class LearningProgress {
   final bool badgeEarned;
 
   bool get isCompleted => status == 'completed' || badgeEarned;
-  bool get isInProgress => status == 'in_progress';
+
+  bool get isInProgress => status == 'in_progress' && !isCompleted;
+
+  /// 0–1 for a course progress bar. Completed fills the bar.
+  double get fraction {
+    if (isCompleted) {
+      return 1;
+    }
+    final pct = readPct.clamp(0, 100);
+    return pct / 100;
+  }
 
   String get statusLabel {
-    if (badgeEarned || status == 'completed') {
-      return 'Badge';
+    if (isCompleted) {
+      return 'Completed';
     }
-    switch (status) {
-      case 'in_progress':
-        return 'In progress';
-      case 'not_started':
-        return 'Not started';
-      default:
-        return status;
+    if (isInProgress) {
+      return 'In progress';
     }
+    if (status == 'not_started' || status.isEmpty) {
+      return 'Not started';
+    }
+    return status.replaceAll('_', ' ');
   }
 
   factory LearningProgress.fromJson(Map<String, dynamic> json) {
     return LearningProgress(
       moduleId: (json['module_id'] ?? '').toString(),
       status: (json['status'] ?? 'not_started').toString(),
-      readPct: asInt(json['read_pct']),
+      readPct: asInt(json['read_pct']).clamp(0, 100),
       quizPassed: asBool(json['quiz_passed']),
       badgeEarned: asBool(json['badge_earned']),
     );
+  }
+
+  /// Progress rows keyed by module id. Rows missing an id are skipped.
+  static Map<String, LearningProgress> byModuleId(Object? value) {
+    final map = <String, LearningProgress>{};
+    for (final row in asJsonMapList(value)) {
+      final parsed = LearningProgress.fromJson(row);
+      if (parsed.moduleId.isEmpty) {
+        continue;
+      }
+      map[parsed.moduleId] = parsed;
+    }
+    return map;
   }
 }

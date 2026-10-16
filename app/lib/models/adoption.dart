@@ -1,4 +1,5 @@
 import '../api/json_map.dart';
+import '../api/media.dart';
 
 class Adoption {
   const Adoption({
@@ -9,6 +10,7 @@ class Adoption {
     this.message,
     this.rejectionReason,
     this.createdAt,
+    this.photoUrls = const [],
   });
 
   final String id;
@@ -18,6 +20,18 @@ class Adoption {
   final String? message;
   final String? rejectionReason;
   final String? createdAt;
+
+  final List<String> photoUrls;
+
+  String? get photoPath {
+    for (final url in photoUrls) {
+      final trimmed = url.trim();
+      if (trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+    return null;
+  }
 
   bool get canCancel => status == 'pending';
 
@@ -47,6 +61,7 @@ class Adoption {
       message: asNullableString(json['message']),
       rejectionReason: asNullableString(json['rejection_reason']),
       createdAt: asNullableString(json['created_at']),
+      photoUrls: parseUrlList(json['photo_urls']),
     );
   }
 }

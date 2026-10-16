@@ -7,6 +7,8 @@ class Listing {
     required this.status,
     this.reviewNotes,
     this.createdAt,
+    this.animalName,
+    this.species,
   });
 
   final String id;
@@ -14,6 +16,9 @@ class Listing {
   final String status;
   final String? reviewNotes;
   final String? createdAt;
+
+  final String? animalName;
+  final String? species;
 
   String get statusLabel {
     switch (status) {
@@ -37,6 +42,8 @@ class Listing {
       status: (json['status'] ?? '').toString(),
       reviewNotes: asNullableString(json['review_notes']),
       createdAt: asNullableString(json['created_at']),
+      animalName: asNullableString(json['animal_name']),
+      species: asNullableString(json['species']),
     );
   }
 }

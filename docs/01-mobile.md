@@ -88,10 +88,15 @@ Port tokens from `public/assets/css/tokens.css` and `docs/study/DESIGN_SYSTEM.md
 3. Resident report/adopt, then rescuer cases.
 4. Learning / messages / notifications.
 
-## Open (do not decide in code yet)
+## Open
 
-- Offline report queue (study allows async on bad network)
-- Google Sign-In on device (`POST /api/v1/auth/google` exists; device wiring is **OPEN**)
-- Push (FCM) vs poll — study wants “real time”; web uses EventSource, not push
-- Map widget (`flutter_map` + OSM to match Leaflet, vs Google Maps)
 - Whether resident **web** stays long-term or mobile becomes the community surface (both can coexist; API is shared)
+
+## Decided on the phone
+
+- Offline report queue: a failed submit is stored on the device and sent when the API is reachable again.
+- Google Sign-In calls `POST /api/v1/auth/google` with the ID token. The Android OAuth client must be registered for package `com.furescue.app`.
+- Notifications poll `GET /api/v1/notifications/unread-count` every 30 seconds, matching the web fallback. The PHP dev server cannot hold EventSource open, and Firebase is not used.
+- Map is `flutter_map` plus OpenStreetMap tiles, same idea as the web Leaflet map.
+- `.glb` / `.gltf` profiles play inside the app. Other model URLs still open outside it.
+- Case resolve stays on the web admin console.

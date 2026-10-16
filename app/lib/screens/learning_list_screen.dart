@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
-import '../api/json_map.dart';
 import '../models/learning_module.dart';
 import '../session/session_scope.dart';
-import '../widgets/app_card.dart';
-import '../widgets/async_body.dart';
-import '../widgets/status_chip.dart';
+import '../theme/tokens.dart';
+import '../widgets/learning_catalog_header.dart';
+import '../widgets/learning_course_card.dart';
+import '../widgets/learning_message.dart';
 import 'learning_module_screen.dart';
 
 class LearningListScreen extends StatefulWidget {
@@ -19,6 +19,8 @@ class LearningListScreen extends StatefulWidget {
 class _LearningListScreenState extends State<LearningListScreen> {
   var _loading = true;
   String? _error;
+  String? _notice;
+  String? _category;
   List<LearningModule> _items = const [];
   Map<String, LearningProgress> _progress = const {};
 
@@ -29,26 +31,41 @@ class _LearningListScreenState extends State<LearningListScreen> {
   }
 
   Future<void> _load() async {
+    if (!mounted) {
+      return;
+    }
     setState(() {
-      _loading = true;
       _error = null;
+      _notice = null;
+      if (_items.isEmpty) {
+        _loading = true;
+      }
     });
     try {
       final api = SessionScope.of(context).api;
       final rows = await api.getList('/api/v1/elearning/modules?per_page=50');
-      final progressData = await api.get('/api/v1/elearning/progress');
       if (!mounted) {
         return;
       }
-      final progressRows = asJsonMapList(progressData['progress']);
+      final items = [for (final row in rows) LearningModule.fromJson(row)];
+      String? notice;
+      var progress = _progress;
+      try {
+        final progressData = await api.get('/api/v1/elearning/progress');
+        if (!mounted) {
+          return;
+        }
+        progress = LearningProgress.byModuleId(progressData['progress']);
+      } on ApiException catch (e) {
+        notice = e.message;
+      }
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        _items = rows.map(LearningModule.fromJson).toList();
-        _progress = {
-          for (final row in progressRows)
-            LearningProgress.fromJson(row).moduleId: LearningProgress.fromJson(
-              row,
-            ),
-        };
+        _items = items;
+        _progress = progress;
+        _notice = notice;
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -56,94 +73,140 @@ class _LearningListScreenState extends State<LearningListScreen> {
         return;
       }
       setState(() {
-        _error = e.message;
         _loading = false;
+        if (_items.isEmpty) {
+          _error = e.message;
+        } else {
+          _notice = e.message;
+        }
       });
     }
   }
 
+  Future<void> _open(LearningModule item) async {
+    if (item.id.isEmpty || !mounted) {
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LearningModuleScreen(moduleId: item.id),
+      ),
+    );
+    if (mounted) {
+      await _load();
+    }
+  }
+
+  List<LearningSubjectFilter> _subjects() {
+    final extras = <String>[];
+    for (final item in _items) {
+      if (item.category.isEmpty) {
+        continue;
+      }
+      if (LearningModule.categoryOrder.contains(item.category)) {
+        continue;
+      }
+      if (extras.contains(item.category)) {
+        continue;
+      }
+      extras.add(item.category);
+    }
+    return [
+      const LearningSubjectFilter(category: null, label: 'All'),
+      for (final category in LearningModule.categoryOrder)
+        LearningSubjectFilter(
+          category: category,
+          label: LearningModule.labelFor(category),
+        ),
+      for (final category in extras)
+        LearningSubjectFilter(
+          category: category,
+          label: LearningModule.labelFor(category),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final error = _error;
+    final notice = _notice;
     return Scaffold(
-      appBar: AppBar(title: const Text('Learn')),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: AsyncBody(
-          loading: _loading,
-          error: _error,
-          isEmpty: _items.isEmpty,
-          onRetry: _load,
-          emptyMessage: 'No published modules yet.',
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-            itemCount: _items.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, i) {
-              if (i == 0) {
-                final total = _items.length;
-                final badges = _items.where((m) => _progress[m.id]?.isCompleted == true).length;
-                final reading = _items.fold<int>(0, (sum, m) {
-                  final row = _progress[m.id];
-                  if (row == null) {
-                    return sum;
-                  }
-                  return sum + (row.isCompleted ? 100 : row.readPct);
-                });
-                final pct = total == 0 ? 0.0 : reading / (total * 100);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$badges of $total badges',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(value: pct),
-                    const SizedBox(height: 8),
-                    Text(
-                      'The bar fills as you read. A badge is awarded after the end-of-lesson quiz.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                );
-              }
-              final item = _items[i - 1];
-              final progress = _progress[item.id];
-              return AppCard(
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => LearningModuleScreen(moduleId: item.id),
-                    ),
-                  );
-                  if (mounted) {
-                    await _load();
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StatusChip(
-                      label: progress?.statusLabel ?? 'Not started',
-                      status: progress?.status ?? 'not_started',
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      item.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.categoryLabel,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
+        child: _loading && _items.isEmpty
+            ? const LearningMessage(loading: true, title: 'Loading courses')
+            : error != null && _items.isEmpty
+            ? LearningMessage(
+                title: "Courses didn't load",
+                message: error,
+                error: true,
+                onRetry: _load,
+              )
+            : _items.isEmpty
+            ? LearningMessage(
+                title: notice == null
+                    ? 'No published courses yet'
+                    : "Courses didn't load",
+                message:
+                    notice ??
+                    'Lessons show up here after an admin publishes them.',
+                error: notice != null,
+                onRetry: notice == null ? null : _load,
+              )
+            : _catalog(),
       ),
+    );
+  }
+
+  Widget _catalog() {
+    final visible = [
+      for (final item in _items)
+        if (_category == null || item.category == _category) item,
+    ];
+    final inProgress = _items
+        .where((item) => _progress[item.id]?.isInProgress == true)
+        .length;
+    final completed = _items
+        .where((item) => _progress[item.id]?.isCompleted == true)
+        .length;
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpace.md,
+        AppSpace.sm,
+        AppSpace.md,
+        AppSpace.xl,
+      ),
+      itemCount: 1 + (visible.isEmpty ? 1 : visible.length),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpace.sm),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return LearningCatalogHeader(
+            total: _items.length,
+            inProgress: inProgress,
+            completed: completed,
+            subjects: _subjects(),
+            selected: _category,
+            notice: _notice,
+            onSelected: (value) => setState(() => _category = value),
+          );
+        }
+        if (visible.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpace.lg),
+            child: Text(
+              'No courses in ${LearningModule.labelFor(_category ?? '')}.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          );
+        }
+        final item = visible[index - 1];
+        return LearningCourseCard(
+          module: item,
+          progress: _progress[item.id],
+          onTap: item.id.isEmpty ? null : () => _open(item),
+        );
+      },
     );
   }
 }

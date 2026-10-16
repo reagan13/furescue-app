@@ -7,17 +7,17 @@ Open `D:\pepot\furescue-app` + `D:\pepot\furescue`. Do not use the emulator. Do 
 - Flutter Android client (`com.furescue.app`, minSdk 26), tokens, JWT session
 - Login / signup / admin “use the web console” wall
 - Resident + rescuer shells (role split)
-- Resident: My reports, new report (GPS + photos), browse + animal detail (3D via `model_3d_url`), apply / my adoptions, my listings
+- Resident: My reports, new report (GPS + OSM pin, photos and video, offline queue), browse + animal detail (in-app `.glb` / `.gltf`), apply / my adoptions, my listings
 - Rescuer: My cases, case detail, accept / decline, proof photos, duty on/off
 - Duty status is restored from `GET /users/me` (`duty_status` for rescuers)
-- Shared: e-learning, messages inbox + thread, notifications, account edit + photo
+- Shared: e-learning, messages inbox + thread, notifications (30-second unread poll and account badge), account edit + photo
+- Login can continue with Google (`POST /api/v1/auth/google`)
 - Seed password: `Password123!` (`juan@furescue.local`, `rescuer@furescue.local`)
 
-## Still open (do not invent)
+## Still open
 
-- Offline report queue
-- Google Sign-In / FCM / map widget
 - Case **resolve** is admin-only on the API (`CaseWorkflowService`). Phone uploads proof; City Vet resolves on web.
+- Firebase push is not used. Background alerts while the app is closed need a later decision.
 
 ## Run
 

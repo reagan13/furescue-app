@@ -10,6 +10,7 @@ import 'package:furescue_app/session/session_scope.dart';
 import 'package:furescue_app/session/session_store.dart';
 
 import '../support/http_json.dart';
+import '../support/signed_in.dart';
 
 void main() {
   const config = ApiConfig(baseUrl: 'http://127.0.0.1:8000');
@@ -63,5 +64,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Inbox is down'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('a long report row does not overflow at 360px', (tester) async {
+    final description = 'Injured aspin ${'near the shore ' * 12}${'x' * 40}';
+    final address = 'Barangay ${'Central ' * 20}Mati City';
+    final api = ApiClient(
+      config: config,
+      httpClient: jsonClient((request) async {
+        expect(request.url.path, contains('/reports/me'));
+        return jsonResponse(
+          okEnvelope([
+            {
+              'id': 'r1',
+              'status': 'pending_verification',
+              'animal_description': description,
+              'address_text': address,
+              'created_at': '2020-01-15 08:00:00',
+              'photo_urls': <String>[],
+            },
+          ]),
+        );
+      }),
+    );
+
+    await pumpSignedIn(
+      tester,
+      const ReportsListScreen(),
+      api,
+      size: const Size(360, 740),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Pending verification'), findsOneWidget);
+    expect(find.textContaining('Injured aspin'), findsOneWidget);
+    expect(
+      tester.getTopRight(find.textContaining('Injured aspin')).dx,
+      lessThanOrEqualTo(360),
+    );
   });
 }

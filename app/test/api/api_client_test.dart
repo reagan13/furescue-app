@@ -119,4 +119,31 @@ void main() {
       ),
     );
   });
+
+  test('retries a 401 once with the refreshed bearer token', () async {
+    var gets = 0;
+    final api = ApiClient(
+      config: config,
+      httpClient: jsonClient((request) async {
+        gets++;
+        if (gets == 1) {
+          expect(request.headers['authorization'], 'Bearer access-1');
+          return jsonResponse(
+            errorEnvelope('UNAUTHENTICATED', 'expired'),
+            status: 401,
+          );
+        }
+        expect(request.headers['authorization'], 'Bearer access-2');
+        return jsonResponse(
+          okEnvelope({'user': fixtureUser(role: 'resident')}),
+        );
+      }),
+    )..accessToken = 'access-1'
+      ..onRefresh = () async => 'access-2';
+
+    final data = await api.get('/api/v1/users/me');
+    expect(gets, 2);
+    expect((data['user'] as Map)['role'], 'resident');
+    expect(api.accessToken, 'access-2');
+  });
 }

@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../api/api_exception.dart';
 import '../models/report.dart';
 import '../session/session_scope.dart';
-import '../widgets/app_card.dart';
 import '../widgets/async_body.dart';
-import '../widgets/status_chip.dart';
+import '../widgets/report_feed_card.dart';
 import 'report_detail_screen.dart';
 
 class ReportsListScreen extends StatefulWidget {
@@ -55,7 +54,6 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My reports')),
       body: RefreshIndicator(
         onRefresh: _load,
         child: AsyncBody(
@@ -70,7 +68,8 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
             separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
               final report = _items[i];
-              return AppCard(
+              return ReportFeedCard(
+                report: report,
                 onTap: () async {
                   await Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -81,28 +80,6 @@ class _ReportsListScreenState extends State<ReportsListScreen> {
                     await _load();
                   }
                 },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StatusChip(
-                      label: report.statusLabel,
-                      status: report.status,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      report.animalDescription,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    if (report.addressText != null &&
-                        report.addressText!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        report.addressText!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
               );
             },
           ),

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
+import '../format/display.dart';
 import '../models/animal.dart';
 import '../models/listing.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
-import '../widgets/app_card.dart';
 import '../widgets/async_body.dart';
-import '../widgets/status_chip.dart';
+import '../widgets/empty_prompt.dart';
+import '../widgets/scan_card.dart';
+import '../widgets/shell_header.dart';
 import 'animal_detail_screen.dart';
 import 'listing_form_screen.dart';
 
@@ -65,9 +67,7 @@ class _ListingsListScreenState extends State<ListingsListScreen> {
 
   Future<void> _create() async {
     final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => const ListingFormScreen(),
-      ),
+      MaterialPageRoute<bool>(builder: (_) => const ListingFormScreen()),
     );
     if (created == true && mounted) {
       await _load();
@@ -77,69 +77,133 @@ class _ListingsListScreenState extends State<ListingsListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('My listings')),
+      appBar: const ShellHeader(title: 'My listings', showBack: true),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _loading ? null : _create,
         icon: const Icon(Icons.campaign_outlined),
         label: const Text('New listing'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: AsyncBody(
-          loading: _loading,
-          error: _error,
-          isEmpty: _items.isEmpty,
-          onRetry: _load,
-          emptyMessage:
-              'No listings yet. Post a rescued animal for adoption review.',
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
-            itemCount: _items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, i) {
-              final item = _items[i];
-              final animal = _animals[item.animalId];
-              return AppCard(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          AnimalDetailScreen(animalId: item.animalId),
-                    ),
-                  );
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StatusChip(label: item.statusLabel, status: item.status),
-                    const SizedBox(height: 8),
-                    Text(
-                      animal?.displayName ?? 'Listing',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    if (item.status == 'approved') ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'This listing is public — adopters can apply.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                    if (item.status == 'rejected' &&
-                        item.reviewNotes != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        item.reviewNotes!,
-                        style: Theme.of(context).textTheme.bodySmall
-                            ?.copyWith(color: context.tokens.destructive),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            },
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              'Rehome a rescued animal. Listings go live after a review by the City Veterinarian\'s Office.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
-        ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _load,
+              child: AsyncBody(
+                loading: _loading,
+                error: _error,
+                isEmpty: _items.isEmpty,
+                onRetry: _load,
+                emptyMessage: 'No listings yet.',
+                emptyChild: EmptyPrompt(
+                  icon: Icons.campaign_outlined,
+                  title: 'No listings yet',
+                  message: 'Rescued an animal that needs a new home? Post it here and we\'ll review it.',
+                  actionLabel: 'Post for adoption',
+                  onAction: _loading ? null : _create,
+                ),
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+                  itemCount: _items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, i) {
+                    final item = _items[i];
+                    return _ListingCard(
+                      item: item,
+                      animal: _animals[item.animalId],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _ListingCard extends StatelessWidget {
+  const _ListingCard({required this.item, required this.animal});
+
+  final Listing item;
+  final Animal? animal;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final notes = item.reviewNotes?.trim();
+    return ScanCard(
+      photoPath: _photo(animal),
+      title: _title(item, animal),
+      subtitle: _meta(item, animal),
+      statusLabel: item.statusLabel,
+      status: item.status,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => AnimalDetailScreen(animalId: item.animalId),
+          ),
+        );
+      },
+      children: [
+        if (item.status == 'approved')
+          Text(
+            'This listing is public — adopters can apply.',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: tokens.jungle, fontWeight: FontWeight.w700),
+          ),
+        if (item.status == 'rejected' && notes != null && notes.isNotEmpty)
+          Text(
+            'Reviewer notes: $notes',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: tokens.destructive),
+          ),
+      ],
+    );
+  }
+}
+
+String _title(Listing item, Animal? animal) {
+  if (animal != null) {
+    return animal.displayName;
+  }
+  final name = item.animalName?.trim();
+  if (name != null && name.isNotEmpty) {
+    return name;
+  }
+  return 'Listing';
+}
+
+String? _photo(Animal? animal) {
+  if (animal == null || animal.photoUrls.isEmpty) {
+    return null;
+  }
+  final first = animal.photoUrls.first.trim();
+  return first.isEmpty ? null : first;
+}
+
+String? _meta(Listing item, Animal? animal) {
+  final species = animal != null && animal.species.trim().isNotEmpty
+      ? animal.species
+      : (item.species ?? '');
+  final when = timeAgo(item.createdAt);
+  final parts = <String>[
+    if (species.trim().isNotEmpty) labelWord(species),
+    if (when.isNotEmpty) 'Posted $when',
+  ];
+  if (parts.isEmpty) {
+    return null;
+  }
+  return parts.join(' · ');
 }

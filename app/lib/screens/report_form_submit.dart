@@ -37,7 +37,7 @@ Future<SentReport> sendReport({
         filePaths: photoPaths,
       );
     } on ApiException catch (e) {
-      photoError = 'Report created, but photos failed: ${e.message}';
+      photoError = 'Report created, but the files failed: ${e.message}';
     }
   }
   return SentReport(report: report, photoError: photoError);

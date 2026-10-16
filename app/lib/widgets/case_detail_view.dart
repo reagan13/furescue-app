@@ -29,7 +29,6 @@ class CaseDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
     final title = item.animalDescription?.isNotEmpty == true
         ? item.animalDescription!
         : 'Rescue case';
@@ -40,25 +39,15 @@ class CaseDetailView extends StatelessWidget {
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        SliverAppBar(
-          pinned: true,
-          stretch: true,
-          expandedHeight: 248,
-          backgroundColor: tokens.jungle,
-          foregroundColor: tokens.primaryForeground,
-          title: const Text('Case'),
-          flexibleSpace: FlexibleSpaceBar(
-            background: Stack(
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 200,
+            child: Stack(
               fit: StackFit.expand,
               children: [
                 const BrandWaves(),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    MediaQuery.paddingOf(context).top + kToolbarHeight + 4,
-                    16,
-                    28,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                   child: _HeroCopy(item: item, title: title, updated: updated),
                 ),
               ],

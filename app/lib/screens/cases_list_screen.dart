@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
+import '../format/display.dart';
 import '../models/rescue_case.dart';
 import '../session/session_scope.dart';
-import '../widgets/app_card.dart';
 import '../widgets/async_body.dart';
 import '../widgets/confirm_action.dart';
-import '../widgets/status_chip.dart';
+import '../widgets/scan_card.dart';
 import 'case_detail_screen.dart';
 
 class CasesListScreen extends StatefulWidget {
@@ -80,67 +80,94 @@ class _CasesListScreenState extends State<CasesListScreen> {
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My cases'),
-        actions: [
-          TextButton(
-            onPressed: _toggleDuty,
-            child: Text(session.isOnDuty ? 'On duty' : 'Off duty'),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 8, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Cases assigned to you.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _toggleDuty,
+                  child: Text(session.isOnDuty ? 'On duty' : 'Off duty'),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _load,
+              child: AsyncBody(
+                loading: _loading,
+                error: _error,
+                isEmpty: _items.isEmpty,
+                onRetry: _load,
+                emptyMessage:
+                    'No cases assigned yet. Go on duty so City Vet can assign you.',
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  itemCount: _items.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, i) {
+                    final item = _items[i];
+                    return _CaseCard(
+                      item: item,
+                      onOpen: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => CaseDetailScreen(caseId: item.id),
+                          ),
+                        );
+                        if (mounted) {
+                          await _load();
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: AsyncBody(
-          loading: _loading,
-          error: _error,
-          isEmpty: _items.isEmpty,
-          onRetry: _load,
-          emptyMessage:
-              'No cases assigned yet. Go on duty so City Vet can assign you.',
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-            itemCount: _items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, i) {
-              final item = _items[i];
-              return AppCard(
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => CaseDetailScreen(caseId: item.id),
-                    ),
-                  );
-                  if (mounted) {
-                    await _load();
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StatusChip(label: item.statusLabel, status: item.status),
-                    const SizedBox(height: 10),
-                    Text(
-                      item.animalDescription?.isNotEmpty == true
-                          ? item.animalDescription!
-                          : 'Rescue case',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    if (item.addressText != null &&
-                        item.addressText!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        item.addressText!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
+    );
+  }
+}
+
+class _CaseCard extends StatelessWidget {
+  const _CaseCard({required this.item, required this.onOpen});
+
+  final RescueCase item;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final description = item.animalDescription?.trim();
+    final place = item.addressText?.trim();
+    final when = timeAgo(item.createdAt);
+    final meta = <String>[
+      if (place != null && place.isNotEmpty) place,
+      if (when.isNotEmpty) when,
+    ].join(' · ');
+    final photo = item.reportPhotos.isEmpty ? null : item.reportPhotos.first;
+
+    return ScanCard(
+      photoPath: photo,
+      title: description == null || description.isEmpty
+          ? 'Rescue case'
+          : description,
+      titleMaxLines: 3,
+      subtitle: meta.isEmpty ? null : meta,
+      statusLabel: item.statusLabel,
+      status: item.status,
+      onTap: onOpen,
     );
   }
 }

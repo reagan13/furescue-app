@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../api/api_exception.dart';
@@ -11,6 +10,7 @@ import '../theme/tokens.dart';
 import '../widgets/case_action_bar.dart';
 import '../widgets/case_detail_view.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 
 class CaseDetailScreen extends StatefulWidget {
   const CaseDetailScreen({super.key, required this.caseId});
@@ -176,57 +176,44 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final item = _item;
-    final overlay = item == null
-        ? tokens.systemUi
-        : SystemUiOverlayStyle.light.copyWith(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: tokens.paper,
-            systemNavigationBarIconBrightness: Brightness.dark,
-          );
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: overlay,
-      child: Scaffold(
-        backgroundColor: tokens.paper,
-        appBar: item == null ? AppBar(title: const Text('Case')) : null,
-        body: RefreshIndicator(
-          color: tokens.jungle,
-          onRefresh: _load,
-          child: item == null
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  children: [
-                    if (_loading)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 80),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    else if (_error != null)
-                      Text(
-                        _error!,
-                        style: TextStyle(color: tokens.destructive),
-                      ),
-                  ],
-                )
-              : CaseDetailView(
-                  item: item,
-                  activity: _activity,
-                  busy: _busy,
-                  onAccept: () => _respond('accept'),
-                  onDecline: () => _respond('decline'),
-                  onProof: _proof,
-                ),
-        ),
-        bottomNavigationBar: item == null
-            ? null
-            : CaseActionBar(
+    return Scaffold(
+      backgroundColor: tokens.paper,
+      appBar: const ShellHeader(title: 'Case', showBack: true),
+      body: RefreshIndicator(
+        color: tokens.jungle,
+        onRefresh: _load,
+        child: item == null
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                children: [
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 80),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_error != null)
+                    Text(_error!, style: TextStyle(color: tokens.destructive)),
+                ],
+              )
+            : CaseDetailView(
                 item: item,
+                activity: _activity,
                 busy: _busy,
                 onAccept: () => _respond('accept'),
                 onDecline: () => _respond('decline'),
                 onProof: _proof,
               ),
       ),
+      bottomNavigationBar: item == null
+          ? null
+          : CaseActionBar(
+              item: item,
+              busy: _busy,
+              onAccept: () => _respond('accept'),
+              onDecline: () => _respond('decline'),
+              onProof: _proof,
+            ),
     );
   }
 }

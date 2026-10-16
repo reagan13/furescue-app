@@ -43,6 +43,18 @@ class AuthSession extends ChangeNotifier {
     }
   }
 
+  Future<void> loginWithGoogle(String idToken) async {
+    await _run(() async {
+      final data = await api.post(
+        '/api/v1/auth/google',
+        auth: false,
+        body: {'id_token': idToken},
+      );
+      await _acceptTokens(data);
+      user = await _fetchMe();
+    });
+  }
+
   Future<void> login({required String email, required String password}) async {
     await _run(() async {
       final data = await api.post(

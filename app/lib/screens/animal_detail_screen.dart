@@ -10,7 +10,9 @@ import '../session/session_scope.dart';
 import '../widgets/async_body.dart';
 import '../widgets/confirm_action.dart';
 import '../widgets/photo_strip.dart';
+import '../widgets/shell_header.dart';
 import '../widgets/status_chip.dart';
+import 'model_viewer_screen.dart';
 
 class AnimalDetailScreen extends StatefulWidget {
   const AnimalDetailScreen({super.key, required this.animalId});
@@ -66,12 +68,28 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     }
   }
 
-  Future<void> _open3d(String raw) async {
-    final url = Uri.parse(resolveMediaUrl(ApiConfig.current, raw));
-    final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
-    if (!ok && mounted) {
-      showSnack(context, 'Could not open the 3D profile.');
+  Future<void> _open3d(String raw, String title) async {
+    final url = resolveMediaUrl(ApiConfig.current, raw);
+    final path = url.toLowerCase().split('?').first;
+    final playable = path.endsWith('.glb') || path.endsWith('.gltf');
+    if (!playable) {
+      final ok = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!ok && mounted) {
+        showSnack(context, 'Could not open the 3D profile.');
+      }
+      return;
     }
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ModelViewerScreen(url: url, title: title),
+      ),
+    );
   }
 
   Future<void> _apply() async {
@@ -119,7 +137,10 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
   Widget build(BuildContext context) {
     final animal = _animal;
     return Scaffold(
-      appBar: AppBar(title: Text(animal?.displayName ?? 'Animal')),
+      appBar: ShellHeader(
+        title: animal?.displayName ?? 'Animal',
+        showBack: true,
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: AsyncBody(
@@ -128,87 +149,92 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
           isEmpty: animal == null,
           onRetry: _load,
           emptyMessage: 'Animal not found.',
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 28, 16, 32),
-            children: [
-              if (animal!.photoUrls.isNotEmpty) ...[
-                PhotoStrip(urls: animal.photoUrls, height: 220),
-                const SizedBox(height: 20),
-              ],
-              StatusChip(
-                label: animal.statusLabel,
-                status: animal.adoptionStatus,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                animal.displayName,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                [
-                  animal.species,
-                  animal.breedType,
-                  animal.sex,
-                  if (animal.ageEstimate != null) animal.ageEstimate!,
-                ].where((s) => s.isNotEmpty).join(' · '),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              if (animal.colorMarkings != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  animal.colorMarkings!,
-                  style: Theme.of(context).textTheme.bodySmall,
+          // The child is built before AsyncBody can hide it. animal! on this
+          // list threw on the first frame, before the GET returned.
+          child: animal == null
+              ? const SizedBox.shrink()
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 28, 16, 32),
+                  children: [
+                    if (animal.photoUrls.isNotEmpty) ...[
+                      PhotoStrip(urls: animal.photoUrls, height: 220),
+                      const SizedBox(height: 20),
+                    ],
+                    StatusChip(
+                      label: animal.statusLabel,
+                      status: animal.adoptionStatus,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      [
+                        animal.species,
+                        animal.breedType,
+                        animal.sex,
+                        if (animal.ageEstimate != null) animal.ageEstimate!,
+                      ].where((s) => s.isNotEmpty).join(' · '),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    if (animal.colorMarkings != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        animal.colorMarkings!,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                    if (animal.description != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        animal.description!,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                    if (animal.photo360Set.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        '360 set',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      PhotoStrip(urls: animal.photo360Set),
+                    ],
+                    const SizedBox(height: 16),
+                    if (animal.model3dUrl != null)
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            _open3d(animal.model3dUrl!, animal.displayName),
+                        icon: const Icon(Icons.view_in_ar_outlined),
+                        label: const Text('View in 3D'),
+                      )
+                    else
+                      Text(
+                        'No 3D profile uploaded yet.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (animal.isAvailable) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        'Apply to adopt',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _message,
+                        maxLines: 3,
+                        maxLength: 1000,
+                        decoration: const InputDecoration(
+                          hintText: 'Optional note for City Vet',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _applying ? null : _apply,
+                        child: Text(
+                          _applying ? 'Submitting…' : 'Submit application',
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-              if (animal.description != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  animal.description!,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ],
-              if (animal.photo360Set.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text('360 set', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                PhotoStrip(urls: animal.photo360Set),
-              ],
-              const SizedBox(height: 16),
-              if (animal.model3dUrl != null)
-                OutlinedButton.icon(
-                  onPressed: () => _open3d(animal.model3dUrl!),
-                  icon: const Icon(Icons.view_in_ar_outlined),
-                  label: const Text('View in 3D'),
-                )
-              else
-                Text(
-                  'No 3D profile uploaded yet.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              if (animal.isAvailable) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Apply to adopt',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _message,
-                  maxLines: 3,
-                  maxLength: 1000,
-                  decoration: const InputDecoration(
-                    hintText: 'Optional note for City Vet',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _applying ? null : _apply,
-                  child: Text(_applying ? 'Submitting…' : 'Submit application'),
-                ),
-              ],
-            ],
-          ),
         ),
       ),
     );

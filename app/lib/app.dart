@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'api/api_client.dart';
 import 'api/config.dart';
+import 'inbox/inbox_watch.dart';
 import 'screens/admin_blocked_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/rescuer_shell.dart';
@@ -93,10 +94,59 @@ class _Gate extends StatelessWidget {
     if (user.isAdmin) {
       return const AdminBlockedScreen();
     }
-    if (user.isRescuer) {
-      return const RescuerShell();
+    final shell = user.isRescuer
+        ? const RescuerShell()
+        : const ResidentShell();
+    return _InboxHost(api: session.api, child: shell);
+  }
+}
+
+class _InboxHost extends StatefulWidget {
+  const _InboxHost({required this.api, required this.child});
+
+  final ApiClient api;
+  final Widget child;
+
+  @override
+  State<_InboxHost> createState() => _InboxHostState();
+}
+
+class _InboxHostState extends State<_InboxHost> {
+  late final InboxWatch _watch;
+  var _lastUnread = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _watch = InboxWatch(api: widget.api)..start();
+    _watch.addListener(_announce);
+  }
+
+  void _announce() {
+    if (!mounted) {
+      return;
     }
-    return const ResidentShell();
+    final message = _watch.latestMessage;
+    if (message != null &&
+        message.isNotEmpty &&
+        _watch.unread > _lastUnread) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+    _lastUnread = _watch.unread;
+  }
+
+  @override
+  void dispose() {
+    _watch.removeListener(_announce);
+    _watch.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InboxScope(watch: _watch, child: widget.child);
   }
 }
 

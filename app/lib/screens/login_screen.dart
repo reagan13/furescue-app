@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
+import '../auth/google_sign_in_flow.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/auth_field.dart';
@@ -42,6 +43,30 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       setState(() => _error = _friendly(e));
+    }
+  }
+
+  Future<void> _google() async {
+    setState(() => _error = null);
+    try {
+      final idToken = await requestGoogleIdToken();
+      if (!mounted || idToken == null) {
+        return;
+      }
+      await SessionScope.of(context).loginWithGoogle(idToken);
+    } on ApiException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = _friendly(e));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error =
+            'Google sign-in failed. The Android app must be registered for this Google client.';
+      });
     }
   }
 
@@ -132,6 +157,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('Log in'),
                     ),
                     const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: session.busy ? null : _google,
+                      child: const Text('Continue with Google'),
+                    ),
+                    const SizedBox(height: 4),
                     TextButton(
                       onPressed: session.busy
                           ? null

@@ -7,6 +7,7 @@ import '../theme/tokens.dart';
 import '../widgets/app_card.dart';
 import '../widgets/async_body.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -82,16 +83,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasUnread = _items.any((n) => !n.isRead);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          TextButton(
-            onPressed: _items.any((n) => !n.isRead) ? _markAll : null,
-            child: const Text('Read all'),
-          ),
-        ],
-      ),
+      appBar: const ShellHeader(title: 'Notifications', showBack: true),
       body: RefreshIndicator(
         onRefresh: _load,
         child: AsyncBody(
@@ -101,11 +95,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           onRetry: _load,
           emptyMessage: 'No notifications yet.',
           child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-            itemCount: _items.length,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+            itemCount: _items.length + (hasUnread ? 1 : 0),
             separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
-              final item = _items[i];
+              if (hasUnread && i == 0) {
+                return Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _markAll,
+                    child: const Text('Read all'),
+                  ),
+                );
+              }
+              final item = _items[hasUnread ? i - 1 : i];
               return AppCard(
                 onTap: () => _open(item),
                 child: Column(

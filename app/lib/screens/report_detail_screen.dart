@@ -4,8 +4,12 @@ import '../api/api_exception.dart';
 import '../api/json_map.dart';
 import '../models/report.dart';
 import '../session/session_scope.dart';
+import '../theme/tokens.dart';
 import '../widgets/async_body.dart';
 import '../widgets/photo_strip.dart';
+import '../widgets/pin_map.dart';
+import '../widgets/report_feed_image.dart';
+import '../widgets/shell_header.dart';
 import '../widgets/status_chip.dart';
 import 'message_compose_screen.dart';
 
@@ -59,7 +63,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget build(BuildContext context) {
     final report = _report;
     return Scaffold(
-      appBar: AppBar(title: const Text('Report')),
+      appBar: const ShellHeader(title: 'Report', showBack: true),
       body: RefreshIndicator(
         onRefresh: _load,
         child: AsyncBody(
@@ -68,57 +72,90 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           isEmpty: report == null,
           onRetry: _load,
           emptyMessage: 'Report not found.',
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-            children: [
-              StatusChip(label: report!.statusLabel, status: report.status),
-              const SizedBox(height: 12),
-              Text(
-                report.animalDescription,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              if (report.addressText != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  report.addressText!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-              if (report.latitude != null && report.longitude != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '${report.latitude!.toStringAsFixed(5)}, ${report.longitude!.toStringAsFixed(5)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-              if (report.isFlaggedDuplicate) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Flagged as a possible duplicate of a nearby report.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-              if (report.photoUrls.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                PhotoStrip(urls: report.photoUrls),
-              ],
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => MessageComposeScreen(
-                        relatedType: 'report',
-                        relatedId: report.id,
+          child: report == null
+              ? const SizedBox.shrink()
+              : ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    0,
+                    report.photoUrls.isEmpty ? 12 : 0,
+                    0,
+                    32,
+                  ),
+                  children: [
+                    if (report.photoUrls.isNotEmpty)
+                      ReportFeedImage(path: report.photoUrls.first),
+                    if (report.photoUrls.length > 1) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.md,
+                        ),
+                        child: PhotoStrip(
+                          urls: report.photoUrls.skip(1).toList(),
+                        ),
+                      ),
+                    ],
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpace.md,
+                        AppSpace.md,
+                        AppSpace.md,
+                        0,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          StatusChip(
+                            label: report.statusLabel,
+                            status: report.status,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            report.animalDescription,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          if (report.addressText != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              report.addressText!,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                          if (report.latitude != null &&
+                              report.longitude != null) ...[
+                            const SizedBox(height: 12),
+                            PinMap(
+                              latitude: report.latitude,
+                              longitude: report.longitude,
+                            ),
+                          ],
+                          if (report.isFlaggedDuplicate) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Flagged as a possible duplicate of a nearby report.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => MessageComposeScreen(
+                                    relatedType: 'report',
+                                    relatedId: report.id,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.chat_bubble_outline),
+                            label: const Text('Message City Vet'),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.chat_bubble_outline),
-                label: const Text('Message City Vet'),
-              ),
-            ],
-          ),
+                  ],
+                ),
         ),
       ),
     );

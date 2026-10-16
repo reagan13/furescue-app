@@ -13,18 +13,23 @@ void main() {
       FuRescueApp(store: MemorySessionStore(), skipRestore: true),
     );
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'rescuer@furescue.local');
+    await tester.enterText(
+      find.byType(TextField).first,
+      'rescuer@furescue.local',
+    );
     await tester.enterText(find.byType(TextField).last, 'Password123!');
     await tester.tap(find.widgetWithText(FilledButton, 'Log in'));
     await tester.pumpAndSettle(const Duration(seconds: 8));
     expect(find.byType(RescuerShell), findsOneWidget);
-    expect(find.text('My cases'), findsOneWidget);
+    expect(find.text('Cases'), findsWidgets);
 
     final duty = find.textContaining('duty');
     expect(duty, findsWidgets);
-    await tester.tap(find.text('Off duty').evaluate().isEmpty
-        ? find.text('On duty')
-        : find.text('Off duty'));
+    await tester.tap(
+      find.text('Off duty').evaluate().isEmpty
+          ? find.text('On duty')
+          : find.text('Off duty'),
+    );
     await tester.pumpAndSettle();
     final confirm = find.text('Go on duty').evaluate().isEmpty
         ? find.text('Go off duty')

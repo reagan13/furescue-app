@@ -4,6 +4,7 @@ import '../api/api_exception.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/confirm_action.dart';
+import '../widgets/shell_header.dart';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -56,7 +57,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Report a problem')),
+      appBar: const ShellHeader(title: 'Report a problem', showBack: true),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
         children: [

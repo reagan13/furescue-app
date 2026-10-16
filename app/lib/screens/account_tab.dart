@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api/config.dart';
 import '../api/media.dart';
+import '../inbox/inbox_watch.dart';
 import '../session/session_scope.dart';
 import '../theme/tokens.dart';
 import '../widgets/app_card.dart';
@@ -29,7 +30,6 @@ class AccountTab extends StatelessWidget {
         : resolveMediaUrl(ApiConfig.current, photo);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Account')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
@@ -183,7 +183,10 @@ class AccountTab extends StatelessWidget {
           ],
           _LinkTile(
             icon: Icons.notifications_outlined,
-            title: 'Notifications',
+            title: () {
+              final unread = InboxScope.maybeOf(context)?.unread ?? 0;
+              return unread > 0 ? 'Notifications ($unread)' : 'Notifications';
+            }(),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -197,9 +200,7 @@ class AccountTab extends StatelessWidget {
             title: 'Report a problem',
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const FeedbackScreen(),
-                ),
+                MaterialPageRoute<void>(builder: (_) => const FeedbackScreen()),
               );
             },
           ),
