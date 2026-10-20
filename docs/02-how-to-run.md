@@ -2,7 +2,7 @@
 
 **IMPLEMENTATION** — same laptop rule as MarineSee: physical phone, no emulator. Goal: install an APK and hit the **existing** FuRescue API.
 
-PHP / MySQL / seed / demo accounts: `D:\pepot\furescue\docs\technical\HOW_TO_RUN.md`. This file only adds Flutter and how the phone reaches that server.
+PHP / MySQL / seed / demo accounts: `D:\pepot\furescue\docs\technical\HOW_TO_RUN.md`. The ordered check from that server through this app (including several phones on Wi-Fi) is [04-handover-run.md](04-handover-run.md). This file only adds Flutter and how the phone reaches that server.
 
 The Flutter project is `app/`. Phone only — do not use the emulator.
 

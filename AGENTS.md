@@ -31,15 +31,16 @@ Labels: **STUDY** (web) / **IMPLEMENTATION** (phone-only) / **OPEN**.
 | JWT shape / TTL | `D:\pepot\furescue\src\Auth\JwtService.php` |
 | Colors / type | `D:\pepot\furescue\public\assets\css\tokens.css` + `docs\study\DESIGN_SYSTEM.md` |
 | How to run PHP / MySQL | `D:\pepot\furescue\docs\technical\HOW_TO_RUN.md` |
+| Seed, serve, and check web through this app | `docs/04-handover-run.md` |
 
 Do not maintain a parallel route list or a second study. If the web adds a route, the route file is the contract the day it lands.
 
-Phone-only spec: `docs/01-mobile.md`. Phone + LAN API: `docs/02-how-to-run.md`.
+Phone-only spec: `docs/01-mobile.md`. Phone + LAN API: `docs/02-how-to-run.md`. Handover run: `docs/04-handover-run.md`.
 
 ## Layout
 
 ```text
-docs/                phone-only spec (two files)
+docs/                phone spec + handover run
 app/                 Flutter Android project (minSdk 26)
 ```
 

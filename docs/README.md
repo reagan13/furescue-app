@@ -4,7 +4,7 @@ This folder is a **thin phone wrapper**. It does not replace the web study.
 
 Paste-ready briefing for a new Cursor chat (web + phone): [`D:\pepot\furescue\docs\plans\CONTEXT_PROMPT.md`](../../furescue/docs/plans/CONTEXT_PROMPT.md).
 
-Read the web repo first. Then read the two files here.
+Read the web repo first. Then read the files in this folder. To bring the server up and check the phone, start at [04-handover-run.md](04-handover-run.md).
 
 ## 1. Web (product “what”)
 
@@ -25,6 +25,8 @@ Sibling: `D:\pepot\furescue`.
 |------|----------------|
 | [01-mobile.md](01-mobile.md) | Client vs API, roles on the device, screen map, architecture, opens |
 | [02-how-to-run.md](02-how-to-run.md) | Flutter + physical phone + how the phone hits the local API |
+| [03-handover.md](03-handover.md) | What the phone client already does, and what is still open |
+| [04-handover-run.md](04-handover-run.md) | Seed, serve, and check from the PHP server through this app |
 
 No API catalog. No copied objectives.
 

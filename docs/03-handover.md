@@ -19,7 +19,11 @@ Open `D:\pepot\furescue-app` + `D:\pepot\furescue`. Do not use the emulator. Do 
 - Case **resolve** is admin-only on the API (`CaseWorkflowService`). Phone uploads proof; City Vet resolves on web.
 - Firebase push is not used. Background alerts while the app is closed need a later decision.
 
-## Run
+## Run and check
+
+Seed, which database, the server bind, USB versus several phones, and the pass list are in [04-handover-run.md](04-handover-run.md). The web repo has the same checklist at `docs/technical/HANDOVER_RUN.md`.
+
+Short form once `.env` exists and `php seeders\seed.php` has been run. Password `Password123!`.
 
 ```bat
 cd D:\pepot\furescue
