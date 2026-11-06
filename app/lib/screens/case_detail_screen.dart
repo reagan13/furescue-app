@@ -129,8 +129,57 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     }
   }
 
+  Future<void> _saveHealth(String path, Map<String, dynamic> body) async {
+    setState(() => _busy = true);
+    try {
+      await SessionScope.of(context).api.post(
+        '/api/v1/cases/${widget.caseId}/$path',
+        body: body,
+      );
+      if (mounted) {
+        showSnack(context, 'Health record updated.');
+        await _load();
+      }
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _proof() async {
-    final files = await ImagePicker().pickMultiImage(imageQuality: 85);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Camera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    final List<XFile> files;
+    if (source == ImageSource.camera) {
+      final shot = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (shot == null) return;
+      files = [shot];
+    } else {
+      files = await ImagePicker().pickMultiImage(imageQuality: 85);
+    }
     if (files.isEmpty || !mounted) {
       return;
     }
@@ -203,6 +252,12 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                 onAccept: () => _respond('accept'),
                 onDecline: () => _respond('decline'),
                 onProof: _proof,
+                onVaccination: (name, date) => _saveHealth('vaccinations', {
+                  'name': name,
+                  'date_given': date,
+                }),
+                onHeartRate: (bpm) =>
+                    _saveHealth('heart-rate', {'heart_rate_bpm': bpm}),
               ),
       ),
       bottomNavigationBar: item == null

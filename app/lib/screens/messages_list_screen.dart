@@ -88,7 +88,9 @@ class _MessagesListScreenState extends State<MessagesListScreen> {
           error: _error,
           isEmpty: _items.isEmpty,
           onRetry: _load,
-          emptyMessage: 'No conversations yet. Tap New message to write City Vet about a report or adoption.',
+          emptyMessage: SessionScope.of(context).user?.isRescuer == true
+              ? 'When a case is assigned to you, message that resident or City Vet.'
+              : 'Message the assigned rescuer or City Vet about a report or adoption.',
           child: ListView.separated(
             padding: const EdgeInsets.only(bottom: 88),
             itemCount: _items.length,

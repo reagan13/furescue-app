@@ -19,12 +19,14 @@ Labels: **STUDY** (web) / **IMPLEMENTATION** (phone-only) / **OPEN**.
 - **No Blender work in this repo.** 3D is playback of `model_3d_url` / a 360 set — or a placeholder. Do not author `.blend` files.
 - **Web UI stays in `furescue`.** Never copy PHP pages into Flutter.
 - **Tokens, not raw hex.** Port from the web design system into `theme/tokens.dart` when we scaffold. Change tokens on web first.
+- **Survey statements count.** Resident and rescuer phone flows must be able to support the User and Responder forms in `D:\pepot\furescue\docs\study\FURESCUE-VALIDATION-QUESTIONS.md`. The Administrator form stays on the web. Read `D:\pepot\furescue\docs\study\VALIDATION-GAPS.md` before changing a phone flow. Do not tell the team a statement will score high while its row is `missing`, `unfinished`, or `rater-only`. Close a row with `D:\pepot\furescue\.cursor\skills\furescue-thesis-qa\SKILL.md`. Website checks use `D:\pepot\furescue\.cursor\skills\webapp-testing\SKILL.md`. Run `flutter test` here. Run `flutter test integration_test` only on an attached phone; if none is attached, leave the phone row unfinished.
 
 ## Live truth (do not copy)
 
 | Kind of truth | Canonical place |
 |---------------|-----------------|
 | Objectives, scope, limitations, IPO | `D:\pepot\furescue\docs\study` |
+| User, responder, and admin survey, plus open gaps | `D:\pepot\furescue\docs\study\FURESCUE-VALIDATION-QUESTIONS.md` and `VALIDATION-GAPS.md` |
 | Roles, status machines, page map | `D:\pepot\furescue\docs\technical\WORKFLOWS.md` |
 | Which endpoints exist | `D:\pepot\furescue\src\Http\Routes` |
 | Envelope / CORS | `D:\pepot\furescue\src\Http\Response.php` |

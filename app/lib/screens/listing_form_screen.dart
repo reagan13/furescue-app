@@ -19,6 +19,9 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
   final _age = TextEditingController();
   final _color = TextEditingController();
   final _description = TextEditingController();
+  final _vaccine = TextEditingController();
+  final _vaccineDate = TextEditingController();
+  final _weight = TextEditingController();
   final _picker = ImagePicker();
   final _photos = <XFile>[];
   var _species = 'dog';
@@ -32,6 +35,9 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
     _age.dispose();
     _color.dispose();
     _description.dispose();
+    _vaccine.dispose();
+    _vaccineDate.dispose();
+    _weight.dispose();
     super.dispose();
   }
 
@@ -73,9 +79,18 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
   Future<void> _submit() async {
     final name = _name.text.trim();
     final description = _description.text.trim();
-    if (name.isEmpty || description.isEmpty || _photos.isEmpty) {
+    final vaccine = _vaccine.text.trim();
+    final vaccineDate = _vaccineDate.text.trim();
+    final weight = _weight.text.trim();
+    if (name.isEmpty ||
+        description.isEmpty ||
+        _photos.isEmpty ||
+        vaccine.isEmpty ||
+        vaccineDate.isEmpty ||
+        weight.isEmpty) {
       setState(
-        () => _error = 'Name, profile, and at least one photo are required.',
+        () => _error =
+            'Name, profile, a photo, a vaccination, and a weight are required.',
       );
       return;
     }
@@ -99,6 +114,9 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
         'sex': _sex,
         'breed_type': _species == 'cat' ? 'puspin' : 'aspin',
         'description': description,
+        'vaccine_name': vaccine,
+        'vaccine_date': vaccineDate,
+        'weight_kg': weight,
       };
       final age = _age.text.trim();
       final color = _color.text.trim();
@@ -255,6 +273,26 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
               hintText:
                   'Temperament, how it was rescued, and what home it needs.',
             ),
+          ),
+          const SizedBox(height: 12),
+          Text('Vaccination', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _vaccine,
+            decoration: const InputDecoration(hintText: 'Rabies'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _vaccineDate,
+            decoration: const InputDecoration(hintText: 'Date given (YYYY-MM-DD)'),
+          ),
+          const SizedBox(height: 12),
+          Text('Weight (kg)', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _weight,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(hintText: '12.5'),
           ),
           const SizedBox(height: 12),
           Text(

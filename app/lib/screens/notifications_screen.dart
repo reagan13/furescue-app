@@ -8,6 +8,10 @@ import '../widgets/app_card.dart';
 import '../widgets/async_body.dart';
 import '../widgets/confirm_action.dart';
 import '../widgets/shell_header.dart';
+import 'adoptions_list_screen.dart';
+import 'case_detail_screen.dart';
+import 'listings_list_screen.dart';
+import 'report_detail_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -78,7 +82,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) {
       return;
     }
-    await _load();
+    final page = _pageFor(item);
+    if (page != null) {
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    }
+    if (mounted) await _load();
+  }
+
+  Widget? _pageFor(InboxNotification item) {
+    final id = item.relatedId;
+    if (id == null || id.isEmpty) return null;
+    final role = SessionScope.of(context).user?.role;
+    switch (item.relatedType) {
+      case 'case':
+        if (role != 'rescuer') return null;
+        return CaseDetailScreen(caseId: id);
+      case 'report':
+        return ReportDetailScreen(reportId: id);
+      case 'adoption':
+        return AdoptionsListScreen(focusId: id);
+      case 'listing':
+      case 'adoption_listing':
+        return ListingsListScreen(focusId: id);
+      default:
+        return null;
+    }
   }
 
   @override
@@ -127,13 +155,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       item.message,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                    if (item.relatedType != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        item.relatedType!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                    const SizedBox(height: 6),
+                    Text(
+                      item.kindLabel,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               );

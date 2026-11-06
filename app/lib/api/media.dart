@@ -32,6 +32,11 @@ String resolveMediaUrl(ApiConfig config, String path) {
   return config.resolve(trimmed).toString();
 }
 
+bool isVideoUrl(String url) {
+  final path = url.toLowerCase().split('?').first;
+  return path.endsWith('.mp4') || path.endsWith('.webm');
+}
+
 bool isSvgUrl(String url) {
   final path = url.toLowerCase().split('?').first;
   return path.endsWith('.svg');

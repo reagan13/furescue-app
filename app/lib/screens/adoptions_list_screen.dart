@@ -15,7 +15,9 @@ import 'animals_list_screen.dart';
 import 'message_compose_screen.dart';
 
 class AdoptionsListScreen extends StatefulWidget {
-  const AdoptionsListScreen({super.key});
+  const AdoptionsListScreen({super.key, this.focusId});
+
+  final String? focusId;
 
   @override
   State<AdoptionsListScreen> createState() => _AdoptionsListScreenState();
@@ -124,10 +126,20 @@ class _AdoptionsListScreenState extends State<AdoptionsListScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   itemCount: _items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, i) => _AdoptionCard(
-                    item: _items[i],
-                    onCancel: () => _cancel(_items[i]),
-                  ),
+                  itemBuilder: (context, i) {
+                    final card = _AdoptionCard(
+                      item: _items[i],
+                      onCancel: () => _cancel(_items[i]),
+                    );
+                    if (widget.focusId != _items[i].id) return card;
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: context.tokens.jungle, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: card,
+                    );
+                  },
                 ),
               ),
             ),

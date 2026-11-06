@@ -17,12 +17,16 @@ Future<SentReport> sendReport({
   required double latitude,
   required double longitude,
   required List<String> photoPaths,
+  String species = '',
 }) async {
   final body = <String, dynamic>{
     'animal_description': description,
     'latitude': latitude,
     'longitude': longitude,
   };
+  if (species == 'dog' || species == 'cat') {
+    body['species'] = species;
+  }
   if (address.isNotEmpty) {
     body['address_text'] = address;
   }
@@ -37,7 +41,16 @@ Future<SentReport> sendReport({
         filePaths: photoPaths,
       );
     } on ApiException catch (e) {
-      photoError = 'Report created, but the files failed: ${e.message}';
+      try {
+        await api.post('/api/v1/reports/${report.id}/withdraw');
+      } catch (_) {
+        /* leave the server row if withdraw is refused */
+      }
+      throw ApiException(
+        code: 'UPLOAD_FAILED',
+        message:
+            'The report was not finished because the files did not upload. ${e.message}',
+      );
     }
   }
   return SentReport(report: report, photoError: photoError);

@@ -14,6 +14,9 @@ class RescueCase {
     this.resolutionPhotos = const [],
     this.reportPhotos = const [],
     this.animalId,
+    this.latitude,
+    this.longitude,
+    this.health,
   });
 
   final String id;
@@ -27,6 +30,9 @@ class RescueCase {
   final List<String> resolutionPhotos;
   final List<String> reportPhotos;
   final String? animalId;
+  final double? latitude;
+  final double? longitude;
+  final CaseHealth? health;
 
   factory RescueCase.fromJson(Map<String, dynamic> json) {
     final report = json['report'];
@@ -56,7 +62,15 @@ class RescueCase {
         json['photo_urls'] ?? reportMap?['photo_urls'],
       ),
       animalId: asNullableString(json['animal_id']),
+      latitude: _coord(json['latitude'] ?? reportMap?['latitude']),
+      longitude: _coord(json['longitude'] ?? reportMap?['longitude']),
+      health: CaseHealth.fromJson(json['health']),
     );
+  }
+
+  static double? _coord(Object? value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '');
   }
 
   RescueCase mergeReport({
@@ -78,6 +92,9 @@ class RescueCase {
           ? reportPhotos
           : (photos ?? const []),
       animalId: animalId,
+      latitude: latitude,
+      longitude: longitude,
+      health: health,
     );
   }
 
@@ -97,6 +114,55 @@ class RescueCase {
       default:
         return status;
     }
+  }
+}
+
+class CaseHealth {
+  const CaseHealth({
+    required this.hasAnimal,
+    this.animalName,
+    this.species,
+    this.notes,
+    this.vaccinationStatus,
+    this.vaccinations = const [],
+    this.heartRate,
+  });
+
+  final bool hasAnimal;
+  final String? animalName;
+  final String? species;
+  final String? notes;
+  final String? vaccinationStatus;
+  final List<String> vaccinations;
+  final int? heartRate;
+
+  static CaseHealth? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final json = raw.cast<String, dynamic>();
+    final animal = json['animal'];
+    Map<String, dynamic>? animalMap;
+    if (animal is Map) animalMap = animal.cast<String, dynamic>();
+    final shots = <String>[];
+    final list = json['vaccinations'];
+    if (list is List) {
+      for (final row in list) {
+        if (row is Map) {
+          final name = (row['name'] ?? row['vaccine'] ?? row['type'] ?? '').toString();
+          final date = (row['date_given'] ?? row['date'] ?? '').toString();
+          if (name.isNotEmpty) shots.add(date.isEmpty ? name : '$name · $date');
+        }
+      }
+    }
+    final rate = json['heart_rate_bpm'];
+    return CaseHealth(
+      hasAnimal: animalMap != null,
+      animalName: asNullableString(animalMap?['name']),
+      species: asNullableString(animalMap?['species']),
+      notes: asNullableString(json['medical_history_notes']),
+      vaccinationStatus: asNullableString(json['vaccination_status']),
+      vaccinations: shots,
+      heartRate: rate == null ? null : int.tryParse(rate.toString()),
+    );
   }
 }
 

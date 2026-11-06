@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../api/media.dart';
 import '../theme/tokens.dart';
+import 'media_video.dart';
 
 /// Raster photos crop to fill; demo SVG portraits stay fully visible.
 class MediaPhoto extends StatelessWidget {
@@ -30,6 +31,10 @@ class MediaPhoto extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(Icons.pets_outlined, color: tokens.jungle),
     );
+
+    if (isVideoUrl(url)) {
+      return MediaVideo(url: url, width: width, height: height);
+    }
 
     if (isSvgUrl(url)) {
       return SvgPicture.network(

@@ -5,7 +5,9 @@ import '../models/rescue_case.dart';
 import '../theme/tokens.dart';
 import 'activity_timeline.dart';
 import 'brand_waves.dart';
+import 'case_health_card.dart';
 import 'photo_strip.dart';
+import 'pin_map.dart';
 import 'section_card.dart';
 import 'status_chip.dart';
 
@@ -18,6 +20,8 @@ class CaseDetailView extends StatelessWidget {
     this.onAccept,
     this.onDecline,
     this.onProof,
+    this.onVaccination,
+    this.onHeartRate,
   });
 
   final RescueCase item;
@@ -26,6 +30,8 @@ class CaseDetailView extends StatelessWidget {
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
   final VoidCallback? onProof;
+  final Future<void> Function(String name, String date)? onVaccination;
+  final Future<void> Function(int bpm)? onHeartRate;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +106,15 @@ class CaseDetailView extends StatelessWidget {
                             : '—',
                       ),
                     ),
+                    if (item.latitude != null && item.longitude != null) ...[
+                      const SizedBox(height: 12),
+                      PinMap(
+                        latitude: item.latitude,
+                        longitude: item.longitude,
+                        height: 220,
+                      ),
+                    ] else
+                      const Text('No map pin was saved with this report.'),
                     if (item.reportPhotos.isNotEmpty)
                       PhotoStrip(urls: item.reportPhotos, height: 168)
                     else
@@ -109,6 +124,12 @@ class CaseDetailView extends StatelessWidget {
                       ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 12),
+              CaseHealthCard(
+                health: item.health ?? const CaseHealth(hasAnimal: false),
+                onVaccination: onVaccination,
+                onHeartRate: onHeartRate,
               ),
               if (item.canAddProof ||
                   item.resolutionPhotos.isNotEmpty ||

@@ -30,4 +30,20 @@ class InboxNotification {
       createdAt: asNullableString(json['created_at']),
     );
   }
+
+  String get kindLabel {
+    switch (relatedType) {
+      case 'report':
+        return 'Report';
+      case 'adoption':
+        return 'Adoption';
+      case 'case':
+        return 'Case';
+      case 'listing':
+      case 'adoption_listing':
+        return 'Listing';
+      default:
+        return 'Update';
+    }
+  }
 }

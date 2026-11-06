@@ -14,7 +14,9 @@ import 'animal_detail_screen.dart';
 import 'listing_form_screen.dart';
 
 class ListingsListScreen extends StatefulWidget {
-  const ListingsListScreen({super.key});
+  const ListingsListScreen({super.key, this.focusId});
+
+  final String? focusId;
 
   @override
   State<ListingsListScreen> createState() => _ListingsListScreenState();
@@ -116,9 +118,17 @@ class _ListingsListScreenState extends State<ListingsListScreen> {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, i) {
                     final item = _items[i];
-                    return _ListingCard(
+                    final card = _ListingCard(
                       item: item,
                       animal: _animals[item.animalId],
+                    );
+                    if (widget.focusId != item.id) return card;
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: context.tokens.jungle, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: card,
                     );
                   },
                 ),
@@ -175,13 +185,9 @@ class _ListingCard extends StatelessWidget {
 }
 
 String _title(Listing item, Animal? animal) {
-  if (animal != null) {
-    return animal.displayName;
-  }
   final name = item.animalName?.trim();
-  if (name != null && name.isNotEmpty) {
-    return name;
-  }
+  if (name != null && name.isNotEmpty) return name;
+  if (animal != null) return animal.displayName;
   return 'Listing';
 }
 

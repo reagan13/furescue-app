@@ -26,6 +26,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
   double? _lat;
   double? _lng;
   var _locating = false;
+  var _species = 'dog';
   var _submitting = false;
   String? _error;
 
@@ -123,6 +124,7 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
       final sent = await sendReport(
         api: SessionScope.of(context).api,
         description: description,
+        species: _species,
         address: _address.text.trim(),
         latitude: _lat!,
         longitude: _lng!,
@@ -201,6 +203,28 @@ class _ReportFormScreenState extends State<ReportFormScreen> {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
+          Text('Dog or cat', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Dog'),
+                selected: _species == 'dog',
+                onSelected: _submitting
+                    ? null
+                    : (_) => setState(() => _species = 'dog'),
+              ),
+              ChoiceChip(
+                label: const Text('Cat'),
+                selected: _species == 'cat',
+                onSelected: _submitting
+                    ? null
+                    : (_) => setState(() => _species = 'cat'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
             'What did you see?',
             style: Theme.of(context).textTheme.labelLarge,
