@@ -133,6 +133,52 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
     }
   }
 
+  Widget _profileButton(String label, VoidCallback onPressed) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.view_in_ar_outlined),
+      label: Text(label),
+    );
+  }
+
+  Widget _modelSection(Animal animal) {
+    final own = animal.model3dUrl?.trim();
+    final staticUrl = animal.referenceModelUrl?.trim();
+    final buttons = <Widget>[];
+    if (own != null && own.isNotEmpty) {
+      final mesh = own;
+      buttons.add(
+        _profileButton(
+          'View this animal',
+          () => _open3d(mesh, animal.displayName),
+        ),
+      );
+    } else if (staticUrl != null && staticUrl.isNotEmpty) {
+      final file = staticUrl;
+      buttons.add(
+        _profileButton(
+          'View in 3D',
+          () => _open3d(file, animal.displayName),
+        ),
+      );
+    }
+    if (buttons.isEmpty) {
+      return Text(
+        'No 3D profile uploaded yet.',
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < buttons.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          buttons[i],
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final animal = _animal;
@@ -198,18 +244,7 @@ class _AnimalDetailScreenState extends State<AnimalDetailScreen> {
                       PhotoStrip(urls: animal.photo360Set),
                     ],
                     const SizedBox(height: 16),
-                    if (animal.model3dUrl != null)
-                      OutlinedButton.icon(
-                        onPressed: () =>
-                            _open3d(animal.model3dUrl!, animal.displayName),
-                        icon: const Icon(Icons.view_in_ar_outlined),
-                        label: const Text('View in 3D'),
-                      )
-                    else
-                      Text(
-                        'No 3D profile uploaded yet.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                    _modelSection(animal),
                     if (animal.isAvailable) ...[
                       const SizedBox(height: 24),
                       Text(

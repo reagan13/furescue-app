@@ -79,9 +79,85 @@ void main() {
     expect(find.text('No 3D profile uploaded yet.'), findsOneWidget);
     expect(find.text('View in 3D'), findsNothing);
   });
+
+  testWidgets('own mesh is the 3D button when a static model also exists', (tester) async {
+    final api = ApiClient(
+      config: config,
+      httpClient: jsonClient((request) async {
+        return jsonResponse(
+          okEnvelope({
+            'animal': _animalJson(
+              model3dUrl: '/uploads/models/luna.glb',
+              referenceModelUrl: '/assets/models/aspin.glb',
+            ),
+          }),
+        );
+      }),
+    );
+
+    await pumpSignedIn(tester, const AnimalDetailScreen(animalId: 'a1'), api);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('View this animal'), findsOneWidget);
+    expect(find.text('View reference model'), findsNothing);
+    expect(find.text('View in 3D'), findsNothing);
+    expect(find.text('No 3D profile uploaded yet.'), findsNothing);
+  });
+
+  testWidgets('view in 3D uses the reference model when the animal has no own mesh', (
+    tester,
+  ) async {
+    final api = ApiClient(
+      config: config,
+      httpClient: jsonClient((request) async {
+        return jsonResponse(
+          okEnvelope({
+            'animal': _animalJson(
+              referenceModelUrl: '/assets/models/puspin.glb',
+            ),
+          }),
+        );
+      }),
+    );
+
+    await pumpSignedIn(tester, const AnimalDetailScreen(animalId: 'a1'), api);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('View in 3D'), findsOneWidget);
+    expect(find.text('View reference model'), findsNothing);
+    expect(find.text('View this animal'), findsNothing);
+    expect(find.text('No 3D profile uploaded yet.'), findsNothing);
+  });
+
+  testWidgets('hides the reference button when its file url is absent', (tester) async {
+    final api = ApiClient(
+      config: config,
+      httpClient: jsonClient((request) async {
+        return jsonResponse(
+          okEnvelope({
+            'animal': _animalJson(
+              model3dUrl: '/uploads/models/luna.glb',
+            ),
+          }),
+        );
+      }),
+    );
+
+    await pumpSignedIn(tester, const AnimalDetailScreen(animalId: 'a1'), api);
+    await tester.pumpAndSettle();
+
+    expect(find.text('View this animal'), findsOneWidget);
+    expect(find.text('View reference model'), findsNothing);
+    expect(find.text('No 3D profile uploaded yet.'), findsNothing);
+  });
 }
 
-Map<String, Object?> _animalJson() {
+Map<String, Object?> _animalJson({
+  String? model3dUrl,
+  String? referenceModelUrl,
+}) {
   return {
     'id': 'a1',
     'name': 'Luna',
@@ -92,7 +168,8 @@ Map<String, Object?> _animalJson() {
     'age_estimate': '2 years',
     'description': 'Calm around children.',
     'photo_urls': <String>[],
-    'model_3d_url': null,
+    'model_3d_url': model3dUrl,
+    'reference_model_url': referenceModelUrl,
     'photo_360_set': <String>[],
   };
 }

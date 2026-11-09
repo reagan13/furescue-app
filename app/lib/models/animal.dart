@@ -14,6 +14,7 @@ class Animal {
     this.description,
     this.photoUrls = const [],
     this.model3dUrl,
+    this.referenceModelUrl,
     this.photo360Set = const [],
     this.source,
   });
@@ -29,6 +30,7 @@ class Animal {
   final String? description;
   final List<String> photoUrls;
   final String? model3dUrl;
+  final String? referenceModelUrl;
   final List<String> photo360Set;
   final String? source;
 
@@ -70,6 +72,7 @@ class Animal {
       description: asNullableString(json['description']),
       photoUrls: parseUrlList(json['photo_urls']),
       model3dUrl: asNullableString(json['model_3d_url']),
+      referenceModelUrl: asNullableString(json['reference_model_url']),
       photo360Set: parseUrlList(json['photo_360_set']),
       source: asNullableString(json['source']),
     );
